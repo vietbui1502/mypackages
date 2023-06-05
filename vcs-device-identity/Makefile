@@ -8,7 +8,7 @@ PKG_RELEASE:=1
 
 # Source settings (i.e. where to find the source codes)
 # This is a custom variable, used below
-SOURCE_DIR:=/code/vcs-device-identity/p0f-master
+SOURCE_DIR:=/code/mypackages/vcs-device-identity/src
 
 include $(INCLUDE_DIR)/package.mk
 

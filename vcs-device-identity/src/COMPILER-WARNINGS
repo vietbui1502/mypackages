@@ -1,0 +1,28 @@
+p0f.c: In function ‘prepare_pcap’:
+p0f.c:490:9: warning: ‘pcap_lookupdev’ is deprecated: use 'pcap_findalldevs' and use the first device [-Wdeprecated-declarations]
+  490 |         use_iface = (u8*)pcap_lookupdev(pcap_err);
+      |         ^~~~~~~~~
+In file included from /usr/include/pcap.h:43,
+                 from p0f.c:37:
+/usr/include/pcap/pcap.h:394:18: note: declared here
+  394 | PCAP_API char   *pcap_lookupdev(char *)
+      |                  ^~~~~~~~~~~~~~
+api.c: In function ‘handle_query’:
+api.c:73:5: warning: ‘__builtin_strncpy’ specified bound 32 equals destination size [-Wstringop-truncation]
+   73 |     strncpy((char*)r->os_name, (char*)fp_os_names[h->last_name_id],
+      |     ^
+api.c:77:8: warning: ‘__builtin_strncpy’ specified bound 32 equals destination size [-Wstringop-truncation]
+   77 |        strncpy((char*)r->os_flavor, (char*)h->last_flavor, P0F_STR_MAX + 1);
+      |        ^
+api.c:83:5: warning: ‘__builtin_strncpy’ specified bound 32 equals destination size [-Wstringop-truncation]
+   83 |     strncpy((char*)r->http_name, (char*)fp_os_names[h->http_name_id],
+      |     ^
+api.c:87:7: warning: ‘__builtin_strncpy’ specified bound 32 equals destination size [-Wstringop-truncation]
+   87 |       strncpy((char*)r->http_flavor, (char*)h->http_flavor, P0F_STR_MAX + 1);
+      |       ^
+api.c:92:5: warning: ‘__builtin_strncpy’ specified bound 32 equals destination size [-Wstringop-truncation]
+   92 |     strncpy((char*)r->link_type, (char*)h->link_type, P0F_STR_MAX + 1);
+      |     ^
+api.c:95:5: warning: ‘__builtin_strncpy’ specified bound 32 equals destination size [-Wstringop-truncation]
+   95 |     strncpy((char*)r->language, (char*)h->language, P0F_STR_MAX + 1);
+      |     ^
