@@ -2,8 +2,8 @@
 PROGNAME = vcs-device-manager
 VERSION = 1.0
 
-#CC=gcc
-CC = mipsel-openwrt-linux-musl-gcc
+CC=gcc
+#CC = mipsel-openwrt-linux-musl-gcc
 
 USE_CFLAGS = -g -ggdb -Wall -Wno-format -funsigned-char
 
