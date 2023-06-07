@@ -8,7 +8,7 @@ CC=gcc
 USE_CFLAGS = -g -ggdb -Wall -Wno-format -funsigned-char
 
 # This variable holds all object file names, constructed from the source file names using pattern substitution
-OBJFILES = notify.c mongoose.c
+OBJFILES = monitor-client.c mongoose.c
 
 all: $(PROGNAME)
 

@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <sys/types.h>
-//
+
 #include <limits.h>
 #include <unistd.h>
 
@@ -24,8 +24,6 @@
 #include "debug.h"
 #include "api.h"
 #include "mongoose.h"
-
-static  char s_url[256];
   
 #define MAX_EVENTS 1024 /*Max. number of events to process at one go*/
 #define LEN_NAME 1024 /*Assuming length of the filename won't exceed 16 bytes*/
@@ -35,18 +33,23 @@ static  char s_url[256];
 #define DHCP_LEASE_FILE_NAME "dhcp.leases"
 #define DHCP_LEASE_FILE "/tmp/dhcp.leases"
 #define DEVICE_SOCKET "/tmp/device_pipe"
+#define MAX_LINE_LENGTH 256
+#define DHCP_CLIENT_LOG "/usr/bin/dhcpclient.log"
+
+static  char s_url[256];
+static char dhcp_client_log_file[256];
 
 //#define HOST_BUCKETS 256
 
-typedef struct host_tt {
+typedef struct host {
     char host_name[256];
     char ip_addr_str[256];
     char mac_addr_str[256];
     char os[256];
-}host_tt;
+}host_t;
 
 struct host_node {
-    host_tt host;
+    host_t host;
     struct host_node *next;
 };
 
@@ -109,7 +112,7 @@ void printList(){
     }
 }
 
-void insertHost(host_tt host){
+void insertHost(host_t host){
     struct host_node *nh = (struct host_node*)malloc(sizeof(struct host_node));
     nh->host = host;
     nh->next = NULL;
@@ -129,11 +132,11 @@ void insertHost(host_tt host){
     return;
 }
 
-int searchList(char ip_add_str[256]) {
+int searchList(char mac_addr_str[256]) {
     struct host_node *tmp = head;
 
     while (tmp != NULL) {
-        if (strcmp((tmp->host).ip_addr_str, ip_add_str) == 0) {
+        if (strcmp((tmp->host).mac_addr_str, mac_addr_str) == 0) {
             return 1;
         }
         tmp = tmp->next;
@@ -141,10 +144,11 @@ int searchList(char ip_add_str[256]) {
     return 0;
 }
 
-void updateDevice(){
+void updateDevice(char *mac){
     char line[1024];
     char tmp[256];
-    host_tt nh;
+    char mac_tmp[256];
+    host_t nh;
     char buf[256];
 
     FILE *fp = fopen(DHCP_LEASE_FILE, "r");
@@ -154,22 +158,20 @@ void updateDevice(){
     }
 
     while(fgets(line, sizeof(line), fp)){
-        sscanf(line, "%s %s %s %s %s", tmp, nh.mac_addr_str, nh.ip_addr_str, nh.host_name, tmp);
-        if (searchList(nh.ip_addr_str) == 0) {
+        sscanf(line, "%s %s %s %s %s", tmp, mac_tmp, tmp, tmp, tmp);
+        if(strcmp(mac, nh.mac_addr_str) == 0) {
+            sscanf(line, "%s %s %s %s %s", tmp, nh.mac_addr_str, nh.ip_addr_str, nh.host_name, tmp);
+        }
+        if (searchList(nh.mac_addr_str) == 0) {
 
-            //query_os(nh.ip_addr_str, buf);
+            query_os(nh.ip_addr_str, buf);
             strcpy(nh.os, buf);
-
             insertHost(nh);
         }
     }
 
-    
-
     fclose(fp);
-
-    printList();
-
+    print("New host info: mac: %s, ip: %s, host_name: %s, os: %s\n", nh.mac_addr_str, nh.ip_addr_str, nh.host_name, nh.os);
     return;
 }
 
@@ -227,7 +229,7 @@ void notifyDevice() {
 }
  
 
-/*
+
 void query_os(char *ip, char *os) {
     u8 tmp[128];
     struct tm* t;
@@ -315,9 +317,6 @@ void query_os(char *ip, char *os) {
     }
     return;
 }
-*/
-
-#define MAX_LINE_LENGTH 100
 
 int getConfig(char * configFile) {
     FILE *fp = NULL;
@@ -352,19 +351,18 @@ int getConfig(char * configFile) {
 
 }
 
-#define DHCP_CLIENT_LOG "dhcpclient.log"
-
 void monitorConnectedClient() {
     FILE *clientFile;
     char line[MAX_LINE_LENGTH];
-    char key[MAX_LINE_LENGTH];
-    char value[MAX_LINE_LENGTH];
+    char ip_str[MAX_LINE_LENGTH];
+    char mac_str[MAX_LINE_LENGTH];
+    char tmp[MAX_LINE_LENGTH];
 
     // Open the configuration file
     
     clientFile = fopen(DHCP_CLIENT_LOG, "r");
     if (clientFile == NULL) {
-        printf("Failed to open the configuration file.\n");
+        printf("Failed to open the dhcp client log file.\n");
         return;
     }
 
@@ -380,11 +378,18 @@ void monitorConnectedClient() {
         if (newFilePos != filePos) {
             // File has been modified, read new lines
             fseek(clientFile, filePos, SEEK_SET);
+            ip_str[0] = '\0';
+            mac_str[0] = '\0';
 
             while (fgets(line, sizeof(line), clientFile)) {
-                sscanf(line, "%s %s", key, value);
-                printf("Key: %s, Value: %s\n", key, value);
-                notifyDevice();
+                sscanf(line, "%s %s %s %s %s %s %s %s %s %s", tmp, tmp, tmp, tmp, tmp, tmp, tmp, tmp, ip_str, mac_str);
+                if (ip_str[0] == '\0' || mac_str[0] == '\0') {
+                    printf("Read dhcp client log file error because wrong format.\n");
+                }else {
+                    printf("Detect new connected client - ip: %s, mac: %s \n", ip_str, mac_str);
+                    updateDevice(mac_str);
+                    notifyDevice();
+                }
             }
 
             // Update the file position
