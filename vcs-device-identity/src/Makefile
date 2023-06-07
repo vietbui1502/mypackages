@@ -20,6 +20,8 @@ USE_LIBS = -lpcap -lpthread $(LIBS)
 
 # This variable holds all object file names, constructed from the source file names using pattern substitution
 OBJFILES = api.c process.c fp_tcp.c fp_mtu.c fp_http.c readfp.c device.c
+PROGNAME2 = vcs-device-manager
+OBJFILES2 = monitor-client.c mongoose.c
 
 #BASIC_CFLAGS=$(BASIC_CFLAGS) -O3
 #USE_CFLAGS=$(USE_CFLAGS) -O3
@@ -28,10 +30,11 @@ all: $(PROGNAME)
 
 $(PROGNAME):
 	$(CC) $(USE_CFLAGS) $(USE_LDFLAGS) p0f.c $(OBJFILES) -o $(PROGNAME) $(USE_LIBS)
+	$(CC) $(USE_CFLAGS) $(OBJFILES2) -o $(PROGNAME2)
 
 # To clean build artifacts, we specify a 'clean' rule, and use PHONY to indicate that this rule never matches with a potential file in the directory
 .PHONY: clean
  
 clean:
-	rm -f $(PROGNAME) *.o
+	rm -f $(PROGNAME) $(PROGNAME2) *.o
 

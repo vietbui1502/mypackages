@@ -3,7 +3,7 @@ include $(TOPDIR)/rules.mk
 # Name, version and release number
 # The name and version of your package are used to define the variable to point to the build directory of your package: $(PKG_BUILD_DIR)
 PKG_NAME:=vcs-device-identity
-PKG_VERSION:=1.0
+PKG_VERSION:=2.0
 PKG_RELEASE:=1
 
 # Source settings (i.e. where to find the source codes)
@@ -49,6 +49,14 @@ endef
 define Package/vcs-device-identity/install
 		$(INSTALL_DIR) $(1)/usr/bin
 		$(INSTALL_BIN) $(PKG_BUILD_DIR)/vcs-device-identity $(1)/usr/bin
+		$(INSTALL_DATA) $(PKG_BUILD_DIR)/database.fp $(1)/usr/bin
+		$(INSTALL_BIN) $(PKG_BUILD_DIR)/vcs-device-manager $(1)/usr/bin
+		$(INSTALL_BIN) $(PKG_BUILD_DIR)/detect_connected_client.sh $(1)/usr/bin
+		$(INSTALL_DATA) $(PKG_BUILD_DIR)/monitor-client.conf $(1)/usr/bin
+		$(INSTALL_DATA) $(PKG_BUILD_DIR)/dhcpclient.log $(1)/usr/bin
+
+		$(INSTALL_DIR) $(1)/etc/init.d
+	    $(INSTALL_BIN) ./files/vcsdevicemanager.init $(1)/etc/init.d/vcsdevicemanager
 endef
 
 # This command is always the last, it uses the definitions and variables we give above in order to get the job done

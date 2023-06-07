@@ -1,0 +1,15 @@
+#!/bin/sh /etc/rc.common
+
+# starts after network starts
+START=22
+# stops before networking stops
+STOP=88
+
+start() {
+  echo "Start device identity services"
+  /usr/bin/vcs-device-identity -i br-lan -f /usr/bin/database.fp -s /tmp/device_pipe -o /tmp/vcs_device_identity.log &
+  echo "Start detect connect client scripts"
+  /usr/bin/detect_connected_client.sh &
+  echo "Start device management service"
+  /usr/bin/vcs-device-manager &
+}
