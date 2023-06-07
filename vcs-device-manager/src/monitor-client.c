@@ -37,7 +37,7 @@
 #define DHCP_CLIENT_LOG "/usr/bin/dhcpclient.log"
 
 static  char s_url[256];
-static char dhcp_client_log_file[256];
+static char newConnectDeviceMsg[1024];
 
 //#define HOST_BUCKETS 256
 
@@ -144,10 +144,12 @@ int searchList(char mac_addr_str[256]) {
     return 0;
 }
 
-void updateDevice(char *mac){
+int updateDevice(char *mac){
     char line[1024];
     char tmp[256];
     char mac_tmp[256];
+    char ip[256];
+    char host_name[256];
     host_t nh;
     char buf[256];
 
@@ -158,21 +160,29 @@ void updateDevice(char *mac){
     }
 
     while(fgets(line, sizeof(line), fp)){
-        sscanf(line, "%s %s %s %s %s", tmp, mac_tmp, tmp, tmp, tmp);
-        if(strcmp(mac, nh.mac_addr_str) == 0) {
-            sscanf(line, "%s %s %s %s %s", tmp, nh.mac_addr_str, nh.ip_addr_str, nh.host_name, tmp);
-        }
-        if (searchList(nh.mac_addr_str) == 0) {
+        sscanf(line, "%s %s %s %s %s", tmp, mac_tmp, ip, host_name, tmp);
+        printf("vietbv_debug: line: %s\n", line);
+        if(strcmp(mac, mac_tmp) == 0) {
+            strcpy(nh.ip_addr_str, ip);
+            strcpy(nh.host_name, host_name);
+            strcpy(nh.mac_addr_str, mac_tmp);
 
-            query_os(nh.ip_addr_str, buf);
-            strcpy(nh.os, buf);
-            insertHost(nh);
+            //if (searchList(nh.mac_addr_str) == 0) {
+
+            //    printf("New host info 1: mac: %s, ip: %s, host_name: %s, os: %s\n", nh.mac_addr_str, nh.ip_addr_str, nh.host_name, nh.os);
+                query_os(nh.ip_addr_str, buf);
+                strcpy(nh.os, buf);
+                insertHost(nh);
+            //}
+
+            newConnectDeviceMsg[0] = '\0';
+            sprintf(newConnectDeviceMsg, "Host name: %s, IP: %s, MAC: %s, OS: %s", nh.host_name, nh.ip_addr_str, nh.mac_addr_str, nh.os);
+            fclose(fp);
+            return 1;
         }
     }
-
     fclose(fp);
-    print("New host info: mac: %s, ip: %s, host_name: %s, os: %s\n", nh.mac_addr_str, nh.ip_addr_str, nh.host_name, nh.os);
-    return;
+    return 0;
 }
 
 static void fn(struct mg_connection *c, int ev, void *ev_data, void *fn_data) {
@@ -183,27 +193,9 @@ static void fn(struct mg_connection *c, int ev, void *ev_data, void *fn_data) {
     MG_ERROR(("%p %s", c->fd, (char *) ev_data));
   } else if (ev == MG_EV_WS_OPEN) {
     // When websocket handshake is successful, send message
-    char host_list[4096] = {0,};
     char msg[4096] = {0,};
-
-    strcat(msg, "{\"id\":1,\"method\":\"update_host\",\"params\":[\"{bsbsbsb: kskjsk}\"]");
-    //struct host_node *p = head;
-
-    //start from beginning
-    
-    //if (p != NULL) {
-    //    sprintf(host_list, "\"host_name - %s, ip - %s, mac - %s, os - %s \"", (p->host).host_name, (p->host).ip_addr_str, (p->host).mac_addr_str, (p->host).os);
-        //p = p->next;
-    //}
-
-    //strcat(msg, host_list);
-    
-
-    //strcat(msg, "]");
-
-    printf("Msg: %s\n", msg);
-
-    //strcpy(msg, "{\"id\":1,\"method\":\"domain_query\",\"params\":[\"abc.top\"]}");
+    //strcat(msg, "{\"id\":1,\"method\":\"update_host\",\"params\":[\"{bsbsbsb: kskjsk}\"]");
+    sprintf(msg, "{\"id\":1,\"method\":\"client_connect\",\"params\":[\"{%s}\"]", newConnectDeviceMsg);
     mg_ws_send(c, msg, strlen(msg), WEBSOCKET_OP_TEXT);
   } else if (ev == MG_EV_WS_MSG) {
     // When we get echo response, print it
@@ -233,7 +225,7 @@ void notifyDevice() {
 void query_os(char *ip, char *os) {
     u8 tmp[128];
     struct tm* t;
-    strcpy(os, "?");
+    strcpy(os, "*");
     
     static struct p0f_api_query q;
     static struct p0f_api_response r;
@@ -267,11 +259,10 @@ void query_os(char *ip, char *os) {
         return;
     }
         
-    
     strcpy(sun.sun_path, DEVICE_SOCKET);
 
     if (connect(sock, (struct sockaddr*)&sun, sizeof(sun))){
-        printf("Can't connect to API socket.");
+        printf("Can't connect to API socket.\n");
         return;
     }
         
@@ -387,8 +378,11 @@ void monitorConnectedClient() {
                     printf("Read dhcp client log file error because wrong format.\n");
                 }else {
                     printf("Detect new connected client - ip: %s, mac: %s \n", ip_str, mac_str);
-                    updateDevice(mac_str);
-                    notifyDevice();
+                    if (updateDevice(mac_str)) {
+                        notifyDevice();
+                        newConnectDeviceMsg[0] = '\0';
+                    }
+                    
                 }
             }
 
