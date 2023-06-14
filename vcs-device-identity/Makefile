@@ -8,7 +8,11 @@ PKG_RELEASE:=1
 
 # Source settings (i.e. where to find the source codes)
 # This is a custom variable, used below
-SOURCE_DIR:=/code/mypackages/vcs-device-identity/src
+#SOURCE_DIR:=/code/mypackages/vcs-device-identity/src
+
+PKG_SOURCE:=$(PKG_NAME)-v$(PKG_VERSION).tar.gz
+PKG_SOURCE_URL:=https://github.com/vietbui1502/mypackages/raw/main/vcs-device-identity/release/
+PKG_HASH:=skip
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -27,11 +31,6 @@ endef
 
 # Package preparation instructions; create the build directory and copy the source code. 
 # The last command is necessary to ensure our preparation instructions remain compatible with the patching system.
-define Build/Prepare
-		mkdir -p $(PKG_BUILD_DIR)
-		cp $(SOURCE_DIR)/* $(PKG_BUILD_DIR)
-		$(Build/Patch)
-endef
 
 TARGET_CFLAGS:=$(filter-out -Wformat -Werror=format-security,$(TARGET_CFLAGS))
 TARGET_CFLAGS += -fstack-protector-all -fPIE -g -ggdb -Wall -Wno-format -DVERSION=\"$(PKG_VERSION)\"
